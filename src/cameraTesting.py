@@ -53,6 +53,7 @@ stopEvent = threading.Event()
 #place holder 0, 0, 0 for now
 armX, armY, armZ = 0, 0, 0
 
+#Function to run the main camera loop, records found objects into the trackedObjects var
 def cameraLoop():
     while not stopEvent.is_set():
         #reset detectedIds for this frames
@@ -226,10 +227,13 @@ def cameraLoop():
             stopEvent.set()
             break
 
+
+#function to retrieve a copy of trackedObjects safely outside of the camera thread
 def getTrackedObjects():
     with trackedObjectsLock:
         return trackedObjects.copy()
 
+#main function to begin the camera thread and then to handle later retrieval of tracked objects
 def main():
     trackingThread = threading.Thread(
         target = cameraLoop,
@@ -241,13 +245,14 @@ def main():
     try:
         while not stopEvent.is_set():
             #for getting the current state of tracked objects call it here
+            #currently just gets it every 1 second but this block can be changed as needed
             objects = getTrackedObjects()
             
             print(objects)
             
             time.sleep(1)
     
-
+    #when done close thread, stop pipeline, close cv2
     finally:
         stopEvent.set()
         trackingThread.join()
